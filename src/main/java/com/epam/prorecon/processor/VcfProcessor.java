@@ -29,54 +29,39 @@ public class VcfProcessor extends AbstractProcessor {
                 if (variantContext.getGenotypes().get(0).isPhased()) {
                     String genotypeString = variantContext.getGenotypes().get(0).getGenotypeString(false);
                     if (genotypeString.indexOf("*") < genotypeString.indexOf("|")) {
-                        fatherNucleotideStringBuffer.replace(variantContext.getStart() - fatherStringShift,
-                                variantContext.getEnd() - fatherStringShift + 1,
-                                variantContext.getAlleles().get(1).getBaseString());
-                        fatherStringShift += variantContext.getAlleles().get(0).getBaseString().length()
-                                - variantContext.getAlleles().get(1).getBaseString().length();
+                        fatherStringShift = applyMutation(variantContext, fatherNucleotideStringBuffer,
+                                fatherStringShift);
                     } else {
-                        motherNucleotideStringBuffer.replace(variantContext.getStart() - motherStringShift,
-                                variantContext.getEnd() - motherStringShift + 1,
-                                variantContext.getAlleles().get(0).getBaseString());
-                        motherStringShift += variantContext.getAlleles().get(1).getBaseString().length()
-                                - variantContext.getAlleles().get(0).getBaseString().length();
+                        motherStringShift = applyMutation(variantContext, motherNucleotideStringBuffer,
+                                motherStringShift);
                     }
                 } else {
                     StringBuilder fatherNucleotideStringBufferForCopy = new StringBuilder(fatherNucleotideStringBuffer);
-                    fatherNucleotideStringBufferForCopy.replace(variantContext.getStart() - fatherStringShift,
-                            variantContext.getEnd() - fatherStringShift + 1,
-                            variantContext.getAlleles().get(1).getBaseString());
-                    int fatherStringShiftForCopy = fatherStringShift +
-                            variantContext.getAlleles().get(0).getBaseString().length()
-                            - variantContext.getAlleles().get(1).getBaseString().length();
+                    int fatherStringShiftForCopy = applyMutation(variantContext, fatherNucleotideStringBufferForCopy,
+                            fatherStringShift);
 
                     VcfProcessor vcfProcessorWithoutCurrentMutation = new VcfProcessor(this.leftVcfList);
                     vcfProcessorWithoutCurrentMutation.process(motherNucleotideStringBuffer.toString(),
                             fatherNucleotideStringBufferForCopy.toString(), motherStringShift,
                             fatherStringShiftForCopy);
 
-                    motherNucleotideStringBuffer.replace(variantContext.getStart() - motherStringShift,
-                            variantContext.getEnd() - motherStringShift + 1,
-                            variantContext.getAlleles().get(1).getBaseString());
-                    motherStringShift += variantContext.getAlleles().get(0).getBaseString().length()
-                            - variantContext.getAlleles().get(1).getBaseString().length();
+                    motherStringShift = applyMutation(variantContext, motherNucleotideStringBuffer, motherStringShift);
                 }
             } else {
-                motherNucleotideStringBuffer.replace(variantContext.getStart() - motherStringShift,
-                        variantContext.getEnd() - motherStringShift + 1,
-                        variantContext.getAlleles().get(1).getBaseString());
-                fatherNucleotideStringBuffer.replace(variantContext.getStart() - fatherStringShift,
-                        variantContext.getEnd() - fatherStringShift + 1,
-                        variantContext.getAlleles().get(1).getBaseString());
-                motherStringShift += variantContext.getAlleles().get(0).getBaseString().length()
-                        - variantContext.getAlleles().get(1).getBaseString().length();
-                fatherStringShift += variantContext.getAlleles().get(0).getBaseString().length()
-                        - variantContext.getAlleles().get(1).getBaseString().length();
+                motherStringShift = applyMutation(variantContext, motherNucleotideStringBuffer, motherStringShift);
+                fatherStringShift = applyMutation(variantContext, fatherNucleotideStringBuffer, fatherStringShift);
             }
         }
 
         possibleFinalStrings.add(motherNucleotideStringBuffer.toString());
         possibleFinalStrings.add(fatherNucleotideStringBuffer.toString());
+    }
+
+    private static int applyMutation(VariantContext variantContext, StringBuilder nucleotideStringBuilder, int shift) {
+        nucleotideStringBuilder.replace(variantContext.getStart() - shift, variantContext.getEnd() - shift + 1,
+                variantContext.getAlleles().get(1).getBaseString());
+        return shift + variantContext.getAlleles().get(0).getBaseString().length()
+                - variantContext.getAlleles().get(1).getBaseString().length();
     }
 
     public Set<String> getPossibleFinalStrings() {

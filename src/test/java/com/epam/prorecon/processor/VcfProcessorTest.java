@@ -42,9 +42,12 @@ public class VcfProcessorTest {
                 vcfFileUrl.getPath(), "X", 12584385, 12592193));
 
         vcfProcessor.process(fastaFileSubSequence, fastaFileSubSequence, 12584385, 12584385);
+//        PrintWriter out = new PrintWriter("C:\\Users\\user\\Downloads\\2_version_results_1_petr.txt");
         for (String currString : vcfProcessor.getPossibleFinalStrings()) {
             LOGGER.warn(currString);
+//            out.println(currString);
         }
-//        LOGGER.warn(fastaFileSubSequence);
+//        out.close();
+        LOGGER.warn(fastaFileSubSequence);
     }
 }
