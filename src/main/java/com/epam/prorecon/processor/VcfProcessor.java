@@ -1,5 +1,6 @@
 package com.epam.prorecon.processor;
 
+import com.epam.prorecon.entity.ExonPosition;
 import htsjdk.variant.variantcontext.VariantContext;
 
 import java.util.ArrayList;
@@ -10,10 +11,12 @@ import java.util.Set;
 public class VcfProcessor extends AbstractProcessor {
 
     private List<VariantContext> leftVcfList;
+    private List<ExonPosition> exonPositions;
     private static Set<String> possibleFinalStrings = new HashSet<String>();
 
-    public VcfProcessor(List<VariantContext> leftVcfList) {
-        this.leftVcfList = new ArrayList<VariantContext>(leftVcfList);
+    public VcfProcessor(List<VariantContext> leftVcfList, List<ExonPosition> exonPositions) {
+        this.leftVcfList = new ArrayList<>(leftVcfList);
+        this.exonPositions = new ArrayList<>(exonPositions);
     }
 
     public void process(String motherNucleotideString, String fatherNucleotideString, int motherStringShift,
@@ -40,7 +43,7 @@ public class VcfProcessor extends AbstractProcessor {
                     int fatherStringShiftForCopy = applyMutation(variantContext, fatherNucleotideStringBufferForCopy,
                             fatherStringShift);
 
-                    VcfProcessor vcfProcessorWithoutCurrentMutation = new VcfProcessor(this.leftVcfList);
+                    VcfProcessor vcfProcessorWithoutCurrentMutation = new VcfProcessor(leftVcfList, exonPositions);
                     vcfProcessorWithoutCurrentMutation.process(motherNucleotideStringBuffer.toString(),
                             fatherNucleotideStringBufferForCopy.toString(), motherStringShift,
                             fatherStringShiftForCopy);

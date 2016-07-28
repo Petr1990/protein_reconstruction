@@ -27,6 +27,9 @@ public class VcfProcessorTest {
         Assert.assertNotNull(vcfFileUrl);
         File vcfFile = new File(vcfFileUrl.getPath());
 
+        URL gtfFileUrl = this.getClass().getClassLoader().getResource("dmel-all-r6.06.LIMK1.gtf");
+        Assert.assertNotNull(gtfFileUrl);
+
         File vcfIndexFile = new File(vcfFileUrl.getPath() + ".Idx");
         Index idx = IndexFactory.createIndex(vcfFile, new VCFCodec(), IndexFactory.IndexType.LINEAR);
 
@@ -39,7 +42,7 @@ public class VcfProcessorTest {
         CloserUtil.close(vcfIndexFile);
 
         VcfProcessor vcfProcessor = new VcfProcessor(FileReaderUtils.readVariantContextsFromVcfFile(
-                vcfFileUrl.getPath(), "X", 12584385, 12592193));
+                vcfFileUrl.getPath(), "X", 12584385, 12592193), FileReaderUtils.readGffFile(gtfFileUrl.getPath()));
 
         vcfProcessor.process(fastaFileSubSequence, fastaFileSubSequence, 12584385, 12584385);
 //        PrintWriter out = new PrintWriter("C:\\Users\\user\\Downloads\\2_version_results_1_petr.txt");

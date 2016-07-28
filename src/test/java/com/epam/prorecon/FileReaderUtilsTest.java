@@ -1,10 +1,9 @@
 package com.epam.prorecon;
 
+import com.epam.prorecon.entity.ExonPosition;
 import htsjdk.samtools.util.CloserUtil;
 import htsjdk.tribble.index.Index;
 import htsjdk.tribble.index.IndexFactory;
-import htsjdk.tribble.index.tabix.TabixFormat;
-import htsjdk.tribble.index.tabix.TabixIndex;
 import htsjdk.tribble.util.LittleEndianOutputStream;
 import htsjdk.variant.variantcontext.Allele;
 import htsjdk.variant.variantcontext.VariantContext;
@@ -61,5 +60,13 @@ public class FileReaderUtilsTest {
         Assert.assertEquals(2, secondVcAlleles.size());
         Assert.assertEquals("CT", secondVcAlleles.get(0).getBaseString());
         Assert.assertEquals("C", secondVcAlleles.get(1).getBaseString());
+    }
+
+    @Test
+    public void readGtfFileTest() throws FileNotFoundException {
+        List<ExonPosition> exonPositions = FileReaderUtils.readGffFile(
+                this.getClass().getClassLoader().getResource("dmel-all-r6.06.LIMK1.gtf").getPath());
+
+        Assert.assertNotNull(exonPositions);
     }
 }
