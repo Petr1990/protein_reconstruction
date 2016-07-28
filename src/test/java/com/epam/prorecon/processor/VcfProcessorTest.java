@@ -1,7 +1,10 @@
 package com.epam.prorecon.processor;
 
 import com.epam.prorecon.FileReaderUtils;
+import com.epam.prorecon.entity.ExonPosition;
+import com.epam.prorecon.entity.WorkflowResult;
 import htsjdk.samtools.util.CloserUtil;
+import htsjdk.tribble.bed.FullBEDFeature;
 import htsjdk.tribble.index.Index;
 import htsjdk.tribble.index.IndexFactory;
 import htsjdk.tribble.util.LittleEndianOutputStream;
@@ -13,6 +16,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 public class VcfProcessorTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(VcfProcessorTest.class);
@@ -41,16 +46,24 @@ public class VcfProcessorTest {
         CloserUtil.close(vcfFile);
         CloserUtil.close(vcfIndexFile);
 
+        List<ExonPosition> exonPositions = FileReaderUtils.readGffFile(gtfFileUrl.getPath());
         VcfProcessor vcfProcessor = new VcfProcessor(FileReaderUtils.readVariantContextsFromVcfFile(
-                vcfFileUrl.getPath(), "X", 12584385, 12592193), FileReaderUtils.readGffFile(gtfFileUrl.getPath()));
+                vcfFileUrl.getPath(), "X", 12584385, 12592193));
 
-        vcfProcessor.process(fastaFileSubSequence, fastaFileSubSequence, 12584385, 12584385);
-//        PrintWriter out = new PrintWriter("C:\\Users\\user\\Downloads\\2_version_results_1_petr.txt");
-        for (String currString : vcfProcessor.getPossibleFinalStrings()) {
-            LOGGER.warn(currString);
-//            out.println(currString);
+        vcfProcessor.addReferenceResult(fastaFileSubSequence, exonPositions, 12584385);
+        vcfProcessor.process(fastaFileSubSequence, fastaFileSubSequence, 12584385, 12584385, exonPositions,
+                new ArrayList<>(exonPositions));
+        PrintWriter out = new PrintWriter("C:\\Users\\user\\Downloads\\2_version_results_1_petr.txt");
+        for (WorkflowResult workflowResult : vcfProcessor.getWorkflowResults()) {
+//            LOGGER.warn(currString);
+            out.println(fastaFileSubSequence);
+            out.println(workflowResult.getAppliedMutationsDnaString());
+            out.println(workflowResult.getMrnaString());
+            out.println(workflowResult.getMrnaWithoutIntronsString());
+            out.println(workflowResult.getProteinString());
+            out.println();
         }
-//        out.close();
+        out.close();
         LOGGER.warn(fastaFileSubSequence);
     }
 }
