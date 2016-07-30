@@ -16,11 +16,11 @@ import java.util.stream.Collectors;
 public class Main {
     public static void main(String[] args) throws IOException, CloneNotSupportedException {
         String fastaFileSubSequence = FileReaderUtils.readSequenceFromFastaFile(
-                new File("dmel-all-chromosome-r606.fasta").getPath(), "X", 12584385, 12592193);
+                new File(args[0]).getPath(), args[3], Integer.valueOf(args[4]), Integer.valueOf(args[5]));
 
-        File vcfFile = new File("agnX1.model.2.snp-indels.vcf");
+        File vcfFile = new File(args[1]);
 
-        File gtfFileUrl = new File("dmel-all-r6.06.LIMK1.gtf");
+        File gtfFileUrl = new File(args[2]);
 
         File vcfIndexFile = new File(vcfFile.getPath() + ".Idx");
         Index idx = IndexFactory.createIndex(vcfFile, new VCFCodec(), IndexFactory.IndexType.LINEAR);
@@ -35,19 +35,19 @@ public class Main {
 
         List<ExonPosition> exonPositions = FileReaderUtils.readGffFile(gtfFileUrl.getPath());
         SequenceProcessor sequenceProcessor = new SequenceProcessor(FileReaderUtils.readVariantContextsFromVcfFile(
-                vcfFile.getPath(), "X", 12584385, 12592193), 12584385);
+                vcfFile.getPath(), args[3], Integer.valueOf(args[4]), Integer.valueOf(args[5])),
+                Integer.valueOf(args[4]));
 
-        sequenceProcessor.addReferenceResult(fastaFileSubSequence, exonPositions, 12584385);
-        sequenceProcessor.process(fastaFileSubSequence, fastaFileSubSequence, 12584385, 12584385, exonPositions,
-                exonPositions.stream().map(ExonPosition::new).collect(Collectors.toList()));
+        sequenceProcessor.addReferenceResult(fastaFileSubSequence, exonPositions, Integer.valueOf(args[4]));
+        sequenceProcessor.process(fastaFileSubSequence, fastaFileSubSequence, Integer.valueOf(args[4]),
+                Integer.valueOf(args[4]), exonPositions, exonPositions.stream().map(ExonPosition::new).
+                        collect(Collectors.toList()));
         PrintWriter protreinsFile = new PrintWriter("proteins.fasta");
         PrintWriter totalFile = new PrintWriter("total.txt");
         List<String> proteins = new ArrayList<>();
         totalFile.println(fastaFileSubSequence);
         for (int i = 0; i < sequenceProcessor.getWorkflowResults().size(); i++) {
             totalFile.println(sequenceProcessor.getWorkflowResults().get(i).getAppliedMutationsDnaString());
-//            totalFile.println(sequenceProcessor.getWorkflowResults().get(i).getMrnaString());
-//            totalFile.println(sequenceProcessor.getWorkflowResults().get(i).getMrnaWithoutIntronsString());
             totalFile.println(sequenceProcessor.getWorkflowResults().get(i).getProteinString());
             totalFile.println();
 
