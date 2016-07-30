@@ -16,6 +16,13 @@ public class ExonPosition {
     public ExonPosition() {
     }
 
+    public ExonPosition(ExonPosition exonPosition) {
+        this.chromosome = exonPosition.chromosome;
+        this.exonType = exonPosition.exonType;
+        this.startIndex = exonPosition.startIndex;
+        this.endIndex = exonPosition.endIndex;
+    }
+
     public void setExonPosition(ExonPosition exonPosition) {
         this.chromosome = exonPosition.chromosome;
         this.exonType = exonPosition.exonType;

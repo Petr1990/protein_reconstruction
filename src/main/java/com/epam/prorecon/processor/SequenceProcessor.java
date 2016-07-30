@@ -8,9 +8,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
-public class VcfProcessor {
-    private static final Logger LOGGER = LoggerFactory.getLogger(VcfProcessor.class);
+public class SequenceProcessor {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SequenceProcessor.class);
 
     private static final Map<Character, Character> COMPLEMENT_MRNA_NUCLEOTIDE_MAP =
             Collections.unmodifiableMap(new HashMap<Character, Character>() {{
@@ -32,11 +33,13 @@ public class VcfProcessor {
             }});
 
     private List<VariantContext> leftVcfList;
+    private static int originalShift;
     private static Set<String> possibleFinalStrings = new HashSet<>();
-    private static Collection<WorkflowResult> workflowResults = new ArrayList<>();
+    private static List<WorkflowResult> workflowResults = new ArrayList<>();
 
-    public VcfProcessor(List<VariantContext> leftVcfList) {
+    public SequenceProcessor(List<VariantContext> leftVcfList, int originalShift) {
         this.leftVcfList = new ArrayList<>(leftVcfList);
+        this.originalShift = originalShift;
     }
 
     public void process(String motherNucleotideString, String fatherNucleotideString, int motherStringShift,
@@ -61,14 +64,16 @@ public class VcfProcessor {
                     }
                 } else {
                     StringBuilder fatherNucleotideStringBufferForCopy = new StringBuilder(fatherNucleotideStringBuffer);
+                    List<ExonPosition> fatherExonPositionsForCopy = fatherExonPositions.stream().map(ExonPosition::new).
+                            collect(Collectors.toList());
                     int fatherStringShiftForCopy = applyMutation(variantContext, fatherNucleotideStringBufferForCopy,
-                            fatherStringShift, fatherExonPositions);
+                            fatherStringShift, fatherExonPositionsForCopy);
 
-                    VcfProcessor vcfProcessorWithoutCurrentMutation = new VcfProcessor(leftVcfList);
-                    vcfProcessorWithoutCurrentMutation.process(motherNucleotideStringBuffer.toString(),
+                    SequenceProcessor sequenceProcessorWithoutCurrentMutation = new SequenceProcessor(leftVcfList, originalShift);
+                    sequenceProcessorWithoutCurrentMutation.process(motherNucleotideStringBuffer.toString(),
                             fatherNucleotideStringBufferForCopy.toString(), motherStringShift,
-                            fatherStringShiftForCopy, new ArrayList<>(motherExonPositions),
-                            new ArrayList<>(fatherExonPositions));
+                            fatherStringShiftForCopy, motherExonPositions.stream().map(ExonPosition::new).
+                                    collect(Collectors.toList()), fatherExonPositionsForCopy);
 
                     motherStringShift = applyMutation(variantContext, motherNucleotideStringBuffer, motherStringShift,
                             motherExonPositions);
@@ -98,7 +103,7 @@ public class VcfProcessor {
             ExonPosition relativeStartCodonPosition = new ExonPosition();
             String invertedMrnaWithoutIntronsString = generateInvertedMrnaString(
                     new StringBuilder(generateMrnaWithoutIntronsString(nonInvertedMrnaString, exonPositions,
-                            relativeStartCodonPosition, shift)));
+                            relativeStartCodonPosition)));
 
             WorkflowResult workflowResult = new WorkflowResult();
             workflowResult.setAppliedMutationsDnaString(nucleotideStringBuffer.toString());
@@ -118,15 +123,13 @@ public class VcfProcessor {
 
         int mutationShift = variantContext.getAlleles().get(0).getBaseString().length()
                 - variantContext.getAlleles().get(1).getBaseString().length();
-        int mutationShiftStart = variantContext.getStart() - shift +
-                variantContext.getAlleles().get(1).getBaseString().length();
-        int mutationShiftEnd = variantContext.getEnd() - shift + 1;
 
         for (ExonPosition exonPosition : exonPositions) {
-            if (!(mutationShiftEnd < exonPosition.getStartIndex() || mutationShiftStart > exonPosition.getEndIndex())) {
-                exonPosition.setStartIndex(Math.min(mutationShiftStart, exonPosition.getStartIndex()));
-                exonPosition.setEndIndex(Math.max(exonPosition.getEndIndex() - mutationShiftEnd
-                        + mutationShiftStart, mutationShiftStart));
+            if (variantContext.getStart() < exonPosition.getStartIndex()) {
+                exonPosition.setStartIndex(exonPosition.getStartIndex() - mutationShift);
+            }
+            if (variantContext.getStart() < exonPosition.getEndIndex()) {
+                exonPosition.setEndIndex(exonPosition.getEndIndex() - mutationShift);
             }
         }
 
@@ -154,7 +157,7 @@ public class VcfProcessor {
     }
 
     private String generateMrnaWithoutIntronsString(String nonInvertedMrnaString, List<ExonPosition> exonPositions,
-                                                    ExonPosition relativeStartCodonPosition, int shift) {
+                                                    ExonPosition relativeStartCodonPosition) {
         StringBuilder nucleotideStringBuilder = new StringBuilder();
 
         ExonPosition startCodon = new ExonPosition();
@@ -182,8 +185,8 @@ public class VcfProcessor {
                                 + startCodon.getEndIndex() - exonWithStartCodon.getStartIndex());
                     }
 
-                    nucleotideStringBuilder.append(nonInvertedMrnaString.substring(exonPosition.getStartIndex() - shift,
-                            exonPosition.getEndIndex() - shift));
+                    nucleotideStringBuilder.append(nonInvertedMrnaString.substring(exonPosition.getStartIndex()
+                                    - originalShift, exonPosition.getEndIndex() - originalShift + 1));
                 });
 
         return generateInvertedMrnaString(nucleotideStringBuilder);
@@ -191,13 +194,17 @@ public class VcfProcessor {
 
     private String generateProteinString(String invertedMrnaWithoutIntrons, int startCodonIndex) {
         StringBuilder proteinStringBuilder = new StringBuilder();
+        StringBuilder mrnaFromStartCodonStringBuilder = new StringBuilder(invertedMrnaWithoutIntrons.substring(
+                0, startCodonIndex + 3));
+        mrnaFromStartCodonStringBuilder = mrnaFromStartCodonStringBuilder.reverse();
 
-        if (!"AUG".equals(invertedMrnaWithoutIntrons.substring(startCodonIndex, startCodonIndex + 3))) {
+        if (!"AUG".equals(mrnaFromStartCodonStringBuilder.substring(0, 3))) {
             return "";
         }
 
-        for (int i = startCodonIndex; i + 2 < invertedMrnaWithoutIntrons.length(); i += 3) {
-            String aminoAcid = NUCLEOTIDE_TRIPLET_AMINO_ACID_MAP.get(invertedMrnaWithoutIntrons.substring(i, i + 3));
+        for (int i = 0; i + 2 < mrnaFromStartCodonStringBuilder.length(); i += 3) {
+            String aminoAcid = NUCLEOTIDE_TRIPLET_AMINO_ACID_MAP.get(mrnaFromStartCodonStringBuilder.
+                    substring(i, i + 3));
             if ("$".equals(aminoAcid)) {
                 return proteinStringBuilder.toString();
             }
@@ -207,7 +214,7 @@ public class VcfProcessor {
         return proteinStringBuilder.toString();
     }
 
-    public Collection<WorkflowResult> getWorkflowResults() {
+    public List<WorkflowResult> getWorkflowResults() {
         return workflowResults;
     }
 }
