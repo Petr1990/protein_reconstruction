@@ -9,7 +9,6 @@ import htsjdk.tribble.util.LittleEndianOutputStream;
 import htsjdk.variant.vcf.VCFCodec;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,7 +24,7 @@ public class Main {
         File vcfIndexFile = new File(vcfFile.getPath() + ".Idx");
         Index idx = IndexFactory.createIndex(vcfFile, new VCFCodec(), IndexFactory.IndexType.LINEAR);
 
-        LittleEndianOutputStream stream = null;
+        LittleEndianOutputStream stream;
         stream = new LittleEndianOutputStream(new BufferedOutputStream(new FileOutputStream(vcfIndexFile)));
         idx.write(stream);
         stream.close();
@@ -33,32 +32,24 @@ public class Main {
         CloserUtil.close(vcfFile);
         CloserUtil.close(vcfIndexFile);
 
+        PrintWriter totalFile = new PrintWriter("total.txt");
         List<ExonPosition> exonPositions = FileReaderUtils.readGffFile(gtfFileUrl.getPath());
         SequenceProcessor sequenceProcessor = new SequenceProcessor(FileReaderUtils.readVariantContextsFromVcfFile(
                 vcfFile.getPath(), args[3], Integer.valueOf(args[4]), Integer.valueOf(args[5])),
-                Integer.valueOf(args[4]));
+                Integer.valueOf(args[4]), totalFile);
 
-        sequenceProcessor.addReferenceResult(fastaFileSubSequence, exonPositions, Integer.valueOf(args[4]));
+        sequenceProcessor.addReferenceResult(fastaFileSubSequence, exonPositions);
         sequenceProcessor.process(fastaFileSubSequence, fastaFileSubSequence, Integer.valueOf(args[4]),
                 Integer.valueOf(args[4]), exonPositions, exonPositions.stream().map(ExonPosition::new).
                         collect(Collectors.toList()));
-        PrintWriter protreinsFile = new PrintWriter("proteins.fasta");
-        PrintWriter totalFile = new PrintWriter("total.txt");
-        List<String> proteins = new ArrayList<>();
-        totalFile.println(fastaFileSubSequence);
-        for (int i = 0; i < sequenceProcessor.getWorkflowResults().size(); i++) {
-            totalFile.println(sequenceProcessor.getWorkflowResults().get(i).getAppliedMutationsDnaString());
-            totalFile.println(sequenceProcessor.getWorkflowResults().get(i).getProteinString());
-            totalFile.println();
+        totalFile.close();
 
-            if (!sequenceProcessor.getWorkflowResults().get(i).getProteinString().equals("")
-                    && !proteins.contains(sequenceProcessor.getWorkflowResults().get(i).getProteinString())) {
-                protreinsFile.println(">" + i);
-                proteins.add(sequenceProcessor.getWorkflowResults().get(i).getProteinString());
-                protreinsFile.println(sequenceProcessor.getWorkflowResults().get(i).getProteinString());
-            }
+        int i = 0;
+        PrintWriter protreinsFile = new PrintWriter("proteins.fasta");
+        for (String protein : SequenceProcessor.getProteins()) {
+            protreinsFile.println(">" + i++);
+            protreinsFile.println(protein);
         }
         protreinsFile.close();
-        totalFile.close();
     }
 }

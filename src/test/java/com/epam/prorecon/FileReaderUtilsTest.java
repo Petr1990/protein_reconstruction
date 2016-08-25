@@ -22,9 +22,10 @@ public class FileReaderUtilsTest {
 
     @Test
     public void readSequenceFromFastaFileTest() throws FileNotFoundException {
+        URL fastaFileUrl = this.getClass().getClassLoader().getResource("dmel-all-chromosome-r606.fasta");
+        Assert.assertNotNull(fastaFileUrl);
         String fastaFileSubSequence = FileReaderUtils.readSequenceFromFastaFile(
-                this.getClass().getClassLoader().getResource("dmel-all-chromosome-r606.fasta")
-                        .getPath(), "X", 12584276, 12584276 + FIRST_FASTA_SEQUANCE_BEGIN.length() - 1);
+                fastaFileUrl.getPath(), "X", 12584276, 12584276 + FIRST_FASTA_SEQUANCE_BEGIN.length() - 1);
 
         Assert.assertEquals(FIRST_FASTA_SEQUANCE_BEGIN, fastaFileSubSequence);
     }
@@ -38,7 +39,7 @@ public class FileReaderUtilsTest {
         File vcfIndexFile = new File(vcfFileUrl.getPath() + ".Idx");
         Index idx = IndexFactory.createIndex(vcfFile, new VCFCodec(), IndexFactory.IndexType.LINEAR);
 
-        LittleEndianOutputStream stream = null;
+        LittleEndianOutputStream stream;
         stream = new LittleEndianOutputStream(new BufferedOutputStream(new FileOutputStream(vcfIndexFile)));
         idx.write(stream);
         stream.close();
@@ -64,8 +65,9 @@ public class FileReaderUtilsTest {
 
     @Test
     public void readGtfFileTest() throws FileNotFoundException {
-        List<ExonPosition> exonPositions = FileReaderUtils.readGffFile(
-                this.getClass().getClassLoader().getResource("dmel-all-r6.06.LIMK1.gtf").getPath());
+        URL gtfFileUrl = this.getClass().getClassLoader().getResource("dmel-all-r6.06.LIMK1.gtf");
+        Assert.assertNotNull(gtfFileUrl);
+        List<ExonPosition> exonPositions = FileReaderUtils.readGffFile(gtfFileUrl.getPath());
 
         Assert.assertNotNull(exonPositions);
     }

@@ -46,7 +46,7 @@ public class FileReaderUtils {
         try (
                 InputStream fis = new FileInputStream(fileUrl);
                 InputStreamReader isr = new InputStreamReader(fis, Charset.forName(UTF_8));
-                BufferedReader br = new BufferedReader(isr);
+                BufferedReader br = new BufferedReader(isr)
         ) {
             while ((line = br.readLine()) != null) {
                 Matcher m = Pattern.compile("(\\w+)\\s+\\w+\\s+(\\w+)\\s+(\\d+)\\s+(\\d+)").matcher(line);

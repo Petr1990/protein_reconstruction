@@ -59,20 +59,8 @@ public class ExonPosition {
                 && startIndex == other.startIndex && endIndex == other.endIndex;
     }
 
-    public String getChromosome() {
-        return chromosome;
-    }
-
-    public void setChromosome(String chromosome) {
-        this.chromosome = chromosome;
-    }
-
     public ExonType getExonType() {
         return exonType;
-    }
-
-    public void setExonType(ExonType exonType) {
-        this.exonType = exonType;
     }
 
     public int getStartIndex() {
@@ -89,9 +77,5 @@ public class ExonPosition {
 
     public void setEndIndex(int endIndex) {
         this.endIndex = endIndex;
-    }
-
-    public int compareTo(ExonPosition exonPosition) {
-        return this.startIndex - exonPosition.getStartIndex();
     }
 }

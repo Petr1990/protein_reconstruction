@@ -1,8 +1,5 @@
 package com.epam.prorecon.entity;
 
-/**
- * Created by user on 7/28/2016.
- */
 public enum ExonType {
     FIVE_UTR,
     EXON,
